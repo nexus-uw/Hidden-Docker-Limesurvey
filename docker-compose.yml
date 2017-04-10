@@ -1,0 +1,37 @@
+
+tor:
+  image: goldy/tor-hidden-service
+  links:
+    - proxy
+  volumes:
+    - ./tor_keys:/var/lib/tor/hidden_service/
+  environment:
+    PROXY_MAP: 80:8000 # first port is exposed port and the second one is service internal port.
+
+# proxy limesurvey since  goldy/tor-hidden-service exposes the mysql port to the dark net (would be nice to be able to tell it not to, but I have been unable to)
+proxy:
+  image: jwilder/nginx-proxy
+  ports:
+    - '8000:80'
+  environment:
+    DEFAULT_HOST: limesurvey
+  volumes:
+    - '/var/run/docker.sock:/tmp/docker.sock'
+  restart: always
+
+limesurvey:
+  image: crramirez/limesurvey:latest
+  links:
+    - mysql
+  volumes:
+    - ./limesurvey_uploads:/app/upload
+  environment:
+    DISABLE_MYSQL: "yes"
+    VIRTUAL_HOST: limesurvey
+
+mysql:
+  image: mysql:latest
+  volumes:
+    - ./limesurvey_mysql:/var/lib/mysql
+  environment:
+      MYSQL_ROOT_PASSWORD: CHANGE_ME_PLEASE
